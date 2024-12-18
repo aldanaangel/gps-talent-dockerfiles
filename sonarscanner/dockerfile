@@ -1,0 +1,22 @@
+# Usar la imagen base de SonarScanner
+FROM sonarsource/sonar-scanner-cli:latest
+
+# Definir UID y GID para Jenkins (ajustables si es necesario)
+ARG JENKINS_UID=1000
+ARG JENKINS_GID=1000
+
+# Crear grupo devops y usuario jenkins
+RUN groupadd -g ${JENKINS_GID} devops && \
+    useradd -m -u ${JENKINS_UID} -g devops -s /bin/bash -d /home/jenkins jenkins
+
+# Cambiar al usuario jenkins por defecto
+USER jenkins
+
+# Establecer el directorio de trabajo
+WORKDIR /app
+
+# Añadir SonarScanner a la ruta para facilidad de uso
+ENV PATH="/opt/sonar-scanner/bin:$PATH"
+
+# Confirmar instalación
+RUN sonar-scanner --version

@@ -1,0 +1,38 @@
+# Imagen base oficial de Alpine Linux
+FROM alpine:3.18
+
+# Definir UID y GID para Jenkins (ajustables si es necesario)
+ARG JENKINS_UID=1000
+ARG JENKINS_GID=1000
+
+# Instalar dependencias necesarias
+RUN apk update && apk add --no-cache \
+    bash \
+    git \
+    curl \
+    jq \
+    openssh
+
+# Descargar e instalar la última versión de GitHub CLI desde la API oficial
+RUN curl -s https://api.github.com/repos/cli/cli/releases/latest | \
+    jq -r '.assets[] | select(.name | contains("linux_amd64.tar.gz")) | .browser_download_url' | \
+    xargs curl -fsSL | tar -xz -C /tmp && \
+    mv /tmp/gh_*_linux_amd64/bin/gh /usr/local/bin/gh && \
+    chmod +x /usr/local/bin/gh
+# Verificar la instalación
+RUN gh --version
+
+# Crear grupo devops y usuario jenkins
+RUN addgroup -g ${JENKINS_GID} devops && \
+    adduser -u ${JENKINS_UID} -G devops -h /home/jenkins -s /bin/bash -D jenkins && \
+    mkdir -p /home/jenkins && \
+    chown -R jenkins:devops /home/jenkins
+
+# Configurar directorio de trabajo
+WORKDIR /workspace
+
+# Cambiar al usuario jenkins
+USER jenkins
+
+# Comando por defecto
+CMD ["bash"]
